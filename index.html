@@ -3,90 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Controle de Ponto</title>
+    <title>Controle de Ponto Inteligente</title>
     <!-- Biblioteca do Excel -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
+        /* VARIÁVEIS DE CORES E TEMA (Light / Dark) */
         :root {
             --mr-bordo: #761113;
             --mr-bege: #dcb98a;
             --mr-bege-escuro: #c89f70;
-            --mr-fundo: #f4f1ea;
+            
+            --bg-color: #f4f1ea;
+            --card-bg: #ffffff;
+            --text-main: #2d3748;
+            --text-sec: #718096;
+            --border-color: #cbd5e0;
+            --day-bg: #faf8f5;
+            --day-weekend-bg: #eef2f6;
+            --input-bg: #ffffff;
+            --header-bg: #ffffff;
         }
 
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background-color: var(--mr-fundo); margin: 0; padding: 0; padding-bottom: 40px; }
+        body.dark-mode {
+            --bg-color: #1a202c;
+            --card-bg: #2d3748;
+            --text-main: #f7fafc;
+            --text-sec: #a0aec0;
+            --border-color: #4a5568;
+            --day-bg: #4a5568;
+            --day-weekend-bg: #2d3748;
+            --input-bg: #1a202c;
+            --header-bg: #2d3748;
+        }
+
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 0; padding-bottom: 40px; transition: 0.3s; }
         
-        .header { background-color: #ffffff; padding: 20px 15px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 10px rgba(118, 17, 19, 0.1); border-bottom: 3px solid var(--mr-bege); }
-        .header-title { font-size: 20px; font-weight: bold; color: var(--mr-bordo); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
-        .btn-change-rule { background: var(--mr-fundo); border: 1px solid var(--mr-bege-escuro); color: var(--mr-bordo); padding: 5px 12px; border-radius: 12px; font-size: 12px; cursor: pointer; font-weight: bold; }
+        .header { background-color: var(--header-bg); padding: 20px 15px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); border-bottom: 3px solid var(--mr-bege); transition: 0.3s; }
+        .header-title { font-size: 20px; font-weight: bold; color: var(--mr-bordo); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+        .header-buttons { display: flex; gap: 10px; justify-content: center; }
+        .btn-header { background: transparent; border: 1px solid var(--mr-bege-escuro); color: var(--text-main); padding: 6px 12px; border-radius: 12px; font-size: 13px; cursor: pointer; font-weight: bold; }
         
         .container { padding: 15px; max-width: 600px; margin: 0 auto; }
         
-        .welcome-screen { text-align: center; padding: 50px 15px; background-color: #ffffff; border-radius: 0 0 20px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .welcome-screen { text-align: center; padding: 50px 15px; background-color: var(--card-bg); border-radius: 0 0 20px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .welcome-title { font-size: 24px; color: var(--mr-bordo); font-weight: bold; margin-bottom: 10px; }
-        .welcome-text { font-size: 16px; color: #4a5568; margin-bottom: 30px; line-height: 1.5; }
+        .welcome-text { font-size: 16px; color: var(--text-sec); margin-bottom: 30px; line-height: 1.5; }
         
-        .rule-card { background: white; border: 2px solid var(--mr-bege); border-radius: 12px; padding: 20px; margin-bottom: 15px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .rule-card:active { transform: scale(0.98); background-color: #fff9f0; border-color: var(--mr-bordo); }
+        .rule-card { background: var(--bg-color); border: 2px solid var(--mr-bege); border-radius: 12px; padding: 20px; margin-bottom: 15px; cursor: pointer; transition: 0.2s; }
+        .rule-card:active { transform: scale(0.98); border-color: var(--mr-bordo); }
         .rule-title { font-size: 18px; font-weight: bold; color: var(--mr-bordo); margin-bottom: 5px; }
-        .rule-desc { font-size: 14px; color: #4a5568; }
+        .rule-desc { font-size: 14px; color: var(--text-sec); }
 
-        .dica { font-size: 13px; color: var(--mr-bordo); text-align: center; margin-bottom: 15px; background: #fff5f5; padding: 10px; border-radius: 8px; border: 1px solid var(--mr-bege); }
+        .dica { font-size: 13px; color: var(--text-main); text-align: center; margin-bottom: 15px; background: var(--day-weekend-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--mr-bege); }
         
-        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 4px solid var(--mr-bordo); }
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 2px solid #edf2f7; padding-bottom: 10px; flex-wrap: wrap; gap: 10px; }
-        .emp-name { flex-grow: 1; font-size: 18px; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; box-sizing: border-box; font-weight: bold; min-width: 150px; color: var(--mr-bordo); }
+        /* PAINEL DE CONTROLE (Pesquisa e Filtro) */
+        .control-panel { background: var(--card-bg); padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 4px solid var(--mr-bege-escuro); }
+        .control-panel label { font-size: 14px; font-weight: bold; color: var(--text-main); margin-bottom: 5px; display: block; }
+        .form-control { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; box-sizing: border-box; font-size: 16px; background: var(--input-bg); color: var(--text-main); }
+        .search-row { display: flex; gap: 10px; }
+        .btn-sort { background: #718096; color: white; border: none; border-radius: 6px; padding: 0 15px; cursor: pointer; font-weight: bold; white-space: nowrap; }
+        
+        .card { background: var(--card-bg); padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 4px solid var(--mr-bordo); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; flex-wrap: wrap; gap: 10px; }
+        .emp-name { flex-grow: 1; font-size: 18px; padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; box-sizing: border-box; font-weight: bold; min-width: 150px; background: var(--input-bg); color: var(--text-main); }
         .action-buttons { display: flex; gap: 5px; flex-wrap: wrap; }
         
-        .day-block { background: #faf8f5; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #e2e8f0; }
-        .weekend-block { background: #eef2f6; border-color: #cbd5e0; } 
+        .day-block { background: var(--day-bg); padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid var(--border-color); }
+        .weekend-block { background: var(--day-weekend-bg); } 
         
         .day-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .day-name { font-weight: bold; color: #2d3748; }
+        .day-name { font-weight: bold; color: var(--text-main); }
         .day-actions { display: flex; align-items: center; gap: 6px; }
         
         .time-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .input-group { display: flex; flex-direction: column; }
-        .input-group label { font-size: 12px; color: #718096; margin-bottom: 4px; font-weight: 500; }
-        input[type="time"] { padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 16px; background: white; color: #2d3748; }
+        .input-group label { font-size: 12px; color: var(--text-sec); margin-bottom: 4px; font-weight: bold; }
+        input[type="time"] { padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 16px; background: var(--input-bg); color: var(--text-main); }
         
-        .totals { display: flex; justify-content: space-between; margin-top: 10px; padding: 8px; border-radius: 6px; background: #edf2f7; font-weight: bold; font-size: 14px; color: #2d3748; }
+        .totals { display: flex; justify-content: space-between; margin-top: 10px; padding: 8px; border-radius: 6px; background: var(--day-weekend-bg); font-weight: bold; font-size: 14px; color: var(--text-main); border: 1px solid var(--border-color); }
         
-        /* ALERTA VERMELHO: Fundo vermelho claro e letra preta em negrito */
         .alert-red { background-color: #fed7d7 !important; color: #000000 !important; font-weight: bold !important; border-color: #feb2b2 !important; }
-        
-        /* ALERTA VERDE: Fundo verde claro e letra preta indicando que está dentro do limite */
         .alert-green { background-color: #c6f6d5 !important; color: #22543d !important; font-weight: bold !important; border-color: #9ae6b4 !important; }
         
         .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.2s; }
         .btn-add { background-color: var(--mr-bordo); color: white; border: 1px solid #5a0d0f; }
-        .btn-export { background-color: var(--mr-bege-escuro); color: white; margin-top: 20px; }
+        .btn-export { background-color: var(--mr-bege-escuro); color: white; margin-top: 10px; }
         .btn-clear { background-color: transparent; color: #e53e3e; margin-top: 5px; border: 1px solid #e53e3e; }
         
+        /* BOTÕES DE BACKUP */
+        .backup-row { display: flex; gap: 10px; margin-top: 20px; border-top: 2px dashed var(--border-color); padding-top: 20px; }
+        .btn-backup { flex: 1; padding: 12px; background-color: #4a5568; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; }
+        .btn-restore { flex: 1; padding: 12px; background-color: transparent; color: #4a5568; border: 1px solid #4a5568; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; }
+        .dark-mode .btn-restore { color: #cbd5e0; border-color: #cbd5e0; }
+
         .btn-toggle { background-color: #718096; color: white; padding: 8px 12px; border-radius: 6px; font-size: 14px; border: none; cursor: pointer; }
         .btn-copy-emp { background-color: var(--mr-bege-escuro); color: white; padding: 8px 12px; border-radius: 6px; font-size: 14px; border: none; cursor: pointer; }
         .btn-remove { background-color: #e53e3e; color: white; padding: 8px 12px; border-radius: 6px; font-size: 14px; border: none; cursor: pointer; }
-        
         .btn-copy-day { background-color: var(--mr-bege); color: var(--mr-bordo); padding: 4px 8px; border-radius: 4px; font-size: 12px; border: none; cursor: pointer; font-weight: bold; }
         .btn-clear-day { background-color: transparent; border: none; font-size: 16px; cursor: pointer; opacity: 0.6; padding: 2px 5px; }
         
         .week-summary { background: var(--mr-bordo); color: white; padding: 15px; border-radius: 8px; margin-top: 5px; text-align: center; font-weight: bold; border: 1px solid #5a0d0f; }
         
-        .empty-state { text-align: center; padding: 30px 15px; color: #718096; font-size: 16px; }
+        .empty-state { text-align: center; padding: 30px 15px; color: var(--text-sec); font-size: 16px; }
 
         #toast-salvo { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #48bb78; color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.3s ease-in-out; pointer-events: none; z-index: 1000; }
         .show-toast { opacity: 1 !important; }
         
+        /* Modais */
         #custom-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; align-items: center; justify-content: center; padding: 15px; }
-        .modal-box { background: white; padding: 20px; border-radius: 12px; max-width: 320px; width: 100%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border-top: 5px solid var(--mr-bordo); }
-        .modal-text { margin-bottom: 15px; font-size: 16px; color: #2d3748; white-space: pre-line; }
+        .modal-box { background: #ffffff; padding: 20px; border-radius: 12px; max-width: 320px; width: 100%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border-top: 5px solid var(--mr-bordo); color: #2d3748; }
+        .modal-text { margin-bottom: 15px; font-size: 16px; white-space: pre-line; }
         .modal-buttons { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
         .modal-btn-cancel { flex: 1; padding: 12px; border: none; border-radius: 8px; background: #e2e8f0; color: #2d3748; font-weight: bold; cursor: pointer; }
         .modal-btn-confirm { flex: 1; padding: 12px; border: none; border-radius: 8px; background: var(--mr-bordo); color: white; font-weight: bold; cursor: pointer; }
         .modal-btn-danger { background: #e53e3e !important; }
 
         .copy-days-list { text-align: left; margin: 10px 0; max-height: 200px; overflow-y: auto; }
-        .copy-day-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 15px; color: #2d3748; cursor: pointer; }
+        .copy-day-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 15px; cursor: pointer; }
         .copy-day-item input { width: 18px; height: 18px; accent-color: var(--mr-bordo); cursor: pointer; }
 
         #webview-blocker { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--mr-bordo); color: white; z-index: 10000; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; box-sizing: border-box; }
@@ -106,15 +139,14 @@
         <div class="webview-title">Libere o acesso ao Sistema</div>
         <div class="webview-text">
             O WhatsApp no iPhone bloqueia o download de documentos.<br><br>
-            Toque no ícone da <b>Bússola 🧭</b> ou nos <b>três pontinhos (...)</b> no canto inferior da tela para abrir no <b>Safari</b> com segurança.
+            Toque no ícone da <b>Bússola 🧭</b> ou nos <b>três pontinhos (...)</b> no canto inferior da tela para abrir no <b>Safari</b>.
         </div>
         <div class="webview-arrow">↘️</div>
     </div>
 
-    <!-- TELA DE ESCOLHA DA REGRA -->
     <div id="welcome-screen" class="welcome-screen" style="display: none;">
         <div class="welcome-title">Controle de Ponto</div>
-        <div class="welcome-text">Selecione a jornada de trabalho da sua empresa para iniciar o preenchimento:</div>
+        <div class="welcome-text">Selecione a jornada de trabalho da sua empresa para iniciar:</div>
         
         <div class="rule-card" onclick="setRule('40h')">
             <div class="rule-title">⌚ Regra 40 Horas</div>
@@ -131,11 +163,22 @@
     <div id="main-app" style="display: none;">
         <div class="header">
             <div class="header-title" id="app-title">Controle de Ponto</div>
-            <button class="btn-change-rule" onclick="changeRule()">⚙️ Trocar Regra</button>
+            <div class="header-buttons">
+                <button class="btn-header" onclick="toggleTheme()" id="theme-btn">🌙 Modo Escuro</button>
+                <button class="btn-header" onclick="changeRule()">⚙️ Trocar Regra</button>
+            </div>
         </div>
 
+        <!-- PAINEL DE CONTROLE DE PESQUISA -->
         <div class="container" style="padding-bottom: 0; padding-top: 20px;">
-            <div class="dica">💡 <b>Dica:</b> Use o botão <b>📋 Copiar</b> em qualquer dia para duplicar o horário preenchido para os dias desejados.</div>
+            <div class="control-panel">
+                <label>🔍 Buscar Funcionário:</label>
+                <div class="search-row">
+                    <input type="text" id="search-emp" class="form-control" style="margin-bottom: 0;" placeholder="Digite o nome..." oninput="filterEmployees(this.value)">
+                    <button class="btn-sort" onclick="sortEmployees()" title="Ordenar A-Z">A-Z ↓</button>
+                </div>
+            </div>
+            <div class="dica">💡 <b>Dica:</b> Use o botão <b>📋 Copiar</b> em qualquer dia para duplicar os horários para outros dias da semana.</div>
         </div>
 
         <div class="container" id="app-container"></div>
@@ -144,6 +187,13 @@
             <button type="button" class="btn btn-add" onclick="addEmployee()">+ Adicionar Trabalhador</button>
             <button type="button" class="btn btn-export" onclick="exportarECompartilhar()">📥 Salvar e Baixar Planilha</button>
             <button type="button" class="btn btn-clear" onclick="limparSemana()">🗑️ Limpar Todos os Horários (Nova Semana)</button>
+            
+            <!-- BOTÕES DE BACKUP E RESTAURAÇÃO -->
+            <div class="backup-row">
+                <button type="button" class="btn-backup" onclick="generateBackup()">💾 Gerar Backup</button>
+                <button type="button" class="btn-restore" onclick="triggerRestore()">📂 Restaurar</button>
+                <input type="file" id="restore-input" accept=".json" style="display: none;" onchange="handleRestore(event)">
+            </div>
         </div>
     </div>
 
@@ -169,6 +219,7 @@
                 document.getElementById('webview-blocker').style.display = 'flex';
                 document.body.classList.add('is-blocked');
             } else {
+                checkTheme();
                 initApp(); 
             }
         });
@@ -177,9 +228,26 @@
         let LIMIT_DAY = 0; 
         let LIMIT_WEEK = 0; 
         let activeRule = ""; 
+        let searchTerm = "";
         let toastTimeout;
         let data = [];
 
+        /* --- TEMA (MODO ESCURO / CLARO) --- */
+        function checkTheme() {
+            let isDark = localStorage.getItem('appPonto_Theme') === 'dark';
+            if (isDark) {
+                document.body.classList.add('dark-mode');
+                document.getElementById('theme-btn').innerText = "☀️ Modo Claro";
+            }
+        }
+        function toggleTheme() {
+            document.body.classList.toggle('dark-mode');
+            let isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('appPonto_Theme', isDark ? 'dark' : 'light');
+            document.getElementById('theme-btn').innerText = isDark ? "☀️ Modo Claro" : "🌙 Modo Escuro";
+        }
+
+        /* --- INICIALIZAÇÃO E REGRAS --- */
         function initApp() {
             activeRule = localStorage.getItem('appPonto_Rule_Clean');
             
@@ -191,12 +259,10 @@
                 document.getElementById('main-app').style.display = 'block';
 
                 if (activeRule === '40h') {
-                    LIMIT_DAY = 480; 
-                    LIMIT_WEEK = 2400; 
+                    LIMIT_DAY = 480; LIMIT_WEEK = 2400; 
                     document.getElementById('app-title').innerText = "Controle de Ponto - Regra 40h";
                 } else {
-                    LIMIT_DAY = 504; 
-                    LIMIT_WEEK = 2520; 
+                    LIMIT_DAY = 504; LIMIT_WEEK = 2520; 
                     document.getElementById('app-title').innerText = "Controle de Ponto - Regra 42h";
                 }
 
@@ -211,12 +277,78 @@
         }
 
         function changeRule() {
-            askConfirm("Deseja trocar a regra da empresa?\n\nOs trabalhadores e os horários que você já preencheu serão mantidos na nova regra.", "Trocar Regra", false, () => {
+            askConfirm("Deseja trocar a regra da empresa?\n\nOs trabalhadores e os horários que você já preencheu serão mantidos.", "Trocar Regra", false, () => {
                 localStorage.removeItem('appPonto_Rule_Clean');
                 initApp();
             });
         }
 
+        /* --- PESQUISA E ORDENAÇÃO --- */
+        function filterEmployees(val) {
+            searchTerm = val.toLowerCase();
+            render();
+        }
+
+        function sortEmployees() {
+            data.sort((a, b) => {
+                let nameA = a.name.trim().toLowerCase();
+                let nameB = b.name.trim().toLowerCase();
+                if(nameA < nameB) return -1;
+                if(nameA > nameB) return 1;
+                return 0;
+            });
+            saveLocal(false);
+            render();
+            showAlert("✅ Lista organizada em ordem alfabética!");
+        }
+
+        /* --- BACKUP E RESTAURAÇÃO --- */
+        function generateBackup() {
+            let backupObj = {
+                regra: activeRule,
+                dados: data
+            };
+            let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupObj));
+            let dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", `Backup_Ponto_${activeRule}.json`);
+            document.body.appendChild(dlAnchorElem);
+            dlAnchorElem.click();
+            dlAnchorElem.remove();
+        }
+
+        function triggerRestore() {
+            document.getElementById('restore-input').click();
+        }
+
+        function handleRestore(event) {
+            let file = event.target.files[0];
+            if (!file) return;
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    let obj = JSON.parse(e.target.result);
+                    if (obj.dados && Array.isArray(obj.dados)) {
+                        data = obj.dados;
+                        activeRule = obj.regra || activeRule;
+                        
+                        localStorage.setItem('appPonto_Rule_Clean', activeRule);
+                        saveLocal(false);
+                        
+                        initApp();
+                        showAlert("✅ Arquivo de Backup restaurado com sucesso!");
+                    } else {
+                        showAlert("❌ O arquivo selecionado não é um backup válido.");
+                    }
+                } catch (err) {
+                    showAlert("❌ Erro ao tentar ler o arquivo.");
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = ''; 
+        }
+
+        /* --- LÓGICA DE DADOS E MODAIS --- */
         let confirmActionCallback = null;
         function closeModal() { document.getElementById('custom-modal').style.display = 'none'; }
         
@@ -250,7 +382,6 @@
             }
 
             let modalText = document.getElementById('modal-text');
-            
             let html = `<b>Copiar horários de ${DAYS[sourceDayIndex]} para:</b><div class="copy-days-list">`;
             DAYS.forEach((dName, idx) => {
                 if (idx !== sourceDayIndex) {
@@ -261,7 +392,6 @@
             
             modalText.innerHTML = html;
             document.getElementById('modal-btn-cancel').style.display = 'block';
-            
             let btnConfirm = document.getElementById('modal-btn-confirm');
             btnConfirm.innerText = "Copiar";
             btnConfirm.classList.remove('modal-btn-danger');
@@ -281,7 +411,6 @@
                 closeModal();
                 showAlert("Horários copiados com sucesso!");
             };
-            
             document.getElementById('custom-modal').style.display = 'flex';
         }
 
@@ -297,11 +426,12 @@
 
         function addEmployee() {
             let newEmp = { name: "", minimized: false, days: [] };
-            for(let i=0; i<7; i++) {
-                newEmp.days.push({ in: "", bout: "", bin: "", out: "" });
-            }
+            for(let i=0; i<7; i++) newEmp.days.push({ in: "", bout: "", bin: "", out: "" });
             data.push(newEmp);
             saveLocal(false);
+            
+            document.getElementById('search-emp').value = "";
+            searchTerm = "";
             render();
         }
 
@@ -330,7 +460,7 @@
         }
 
         function limparSemana() {
-            askConfirm("Isso irá preparar o app para uma nova semana, apagando os horários preenchidos, mas MANTENDO o nome dos funcionários.\n\nDeseja continuar?", "Iniciar Nova Semana", true, () => {
+            askConfirm("Isso apagará TODOS os horários de TODOS os trabalhadores. Nomes serão mantidos.\n\nDeseja continuar?", "Limpar Tudo", true, () => {
                 data.forEach(emp => {
                     emp.days.forEach(d => { d.in = ""; d.bout = ""; d.bin = ""; d.out = ""; });
                 });
@@ -406,14 +536,12 @@
             let wTotalEl = document.getElementById(`weekTot-${empIndex}`);
             wTotalEl.innerText = `Total da Semana: ${formatTime(weekMin)}`;
             
-            // Remove ambas as classes antes de reavaliar
             wTotalEl.classList.remove('alert-red', 'alert-green');
 
             if (weekMin > LIMIT_WEEK) {
                 wTotalEl.classList.add('alert-red');
                 wTotalEl.innerText += ` 🚨 PASSOU DE ${activeRule.toUpperCase()}`;
             } else if (weekMin > 0) {
-                // Aplica o tom de verde claro se houver horas computadas e estiver dentro do limite
                 wTotalEl.classList.add('alert-green');
                 wTotalEl.innerText += ` ✅ DENTRO DO LIMITE (${activeRule.toUpperCase()})`;
             }
@@ -424,11 +552,18 @@
             container.innerHTML = "";
 
             if (data.length === 0) {
-                container.innerHTML = "<div class='empty-state'>Nenhum trabalhador cadastrado.<br><br>Clique em <b>+ Adicionar Trabalhador</b> para começar a preencher.</div>";
+                container.innerHTML = "<div class='empty-state'>Nenhum trabalhador cadastrado.<br><br>Clique em <b>+ Adicionar Trabalhador</b> para começar.</div>";
                 return;
             }
 
+            let hasVisible = false;
+
             data.forEach((emp, empIndex) => {
+                if (searchTerm && !emp.name.toLowerCase().includes(searchTerm)) {
+                    return; 
+                }
+                hasVisible = true;
+
                 let isMin = emp.minimized ? true : false;
                 let toggleIcon = isMin ? "▼ Mostrar" : "▲ Ocultar";
 
@@ -485,22 +620,23 @@
 
                 card.appendChild(daysContainer);
 
-                // Renderização inicial do resumo da semana
                 let weekBlock = document.createElement('div');
                 weekBlock.className = `week-summary`;
                 weekBlock.id = `weekTot-${empIndex}`;
                 card.appendChild(weekBlock);
 
                 container.appendChild(card);
-                
-                // Aplica a formatação correta de cor e texto na inicialização do card
                 updateWeekTotal(empIndex);
             });
+
+            if(!hasVisible) {
+                container.innerHTML = "<div class='empty-state'>Nenhum funcionário encontrado com essa busca.</div>";
+            }
         }
 
         function exportarECompartilhar() {
             if (typeof XLSX === 'undefined') {
-                showAlert("⚠️ O sistema precisa de conexão com a internet na primeira vez para gerar o arquivo.\n\nVerifique sua conexão e recarregue a página.");
+                showAlert("⚠️ O sistema precisa de conexão com a internet na primeira vez para gerar o arquivo.");
                 return;
             }
 
@@ -538,9 +674,9 @@
                 XLSX.utils.book_append_sheet(wb, ws, `Ponto ${activeRule}`);
                 
                 let nomeArquivo = `Controle_de_Ponto_${activeRule}.xlsx`;
+                
                 XLSX.writeFile(wb, nomeArquivo);
-
-                showAlert("✅ Planilha baixada com sucesso!\n\nVerifique a pasta de Downloads do seu celular para enviar o arquivo.");
+                showAlert("✅ Planilha baixada com sucesso!\n\nVerifique a pasta de Downloads.");
 
             } catch (error) {
                 showAlert("Erro ao exportar: " + error.message);
