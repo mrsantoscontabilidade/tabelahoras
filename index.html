@@ -4,8 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Controle de Ponto Inteligente</title>
-    <!-- Biblioteca do Excel -->
+    
+    <!-- Bibliotecas para Excel e PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
     <style>
         /* VARIÁVEIS DE CORES E TEMA (Light / Dark) */
         :root {
@@ -56,7 +60,6 @@
 
         .dica { font-size: 13px; color: var(--text-main); text-align: center; margin-bottom: 15px; background: var(--day-weekend-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--mr-bege); }
         
-        /* PAINEL DE CONTROLE (Pesquisa e Filtro) */
         .control-panel { background: var(--card-bg); padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 4px solid var(--mr-bege-escuro); }
         .control-panel label { font-size: 14px; font-weight: bold; color: var(--text-main); margin-bottom: 5px; display: block; }
         .form-control { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; box-sizing: border-box; font-size: 16px; background: var(--input-bg); color: var(--text-main); }
@@ -88,9 +91,9 @@
         .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.2s; }
         .btn-add { background-color: var(--mr-bordo); color: white; border: 1px solid #5a0d0f; }
         .btn-export { background-color: var(--mr-bege-escuro); color: white; margin-top: 10px; }
+        .btn-export-pdf { background-color: #2b6cb0; color: white; } /* Botão do PDF */
         .btn-clear { background-color: transparent; color: #e53e3e; margin-top: 5px; border: 1px solid #e53e3e; }
         
-        /* BOTÕES DE BACKUP */
         .backup-row { display: flex; gap: 10px; margin-top: 20px; border-top: 2px dashed var(--border-color); padding-top: 20px; }
         .btn-backup { flex: 1; padding: 12px; background-color: #4a5568; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; }
         .btn-restore { flex: 1; padding: 12px; background-color: transparent; color: #4a5568; border: 1px solid #4a5568; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; }
@@ -109,7 +112,6 @@
         #toast-salvo { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #48bb78; color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.3s ease-in-out; pointer-events: none; z-index: 1000; }
         .show-toast { opacity: 1 !important; }
         
-        /* Modais */
         #custom-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; align-items: center; justify-content: center; padding: 15px; }
         .modal-box { background: #ffffff; padding: 20px; border-radius: 12px; max-width: 320px; width: 100%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border-top: 5px solid var(--mr-bordo); color: #2d3748; }
         .modal-text { margin-bottom: 15px; font-size: 16px; white-space: pre-line; }
@@ -169,7 +171,6 @@
             </div>
         </div>
 
-        <!-- PAINEL DE CONTROLE DE PESQUISA -->
         <div class="container" style="padding-bottom: 0; padding-top: 20px;">
             <div class="control-panel">
                 <label>🔍 Buscar Funcionário:</label>
@@ -185,10 +186,13 @@
 
         <div class="container" style="padding-top: 0;">
             <button type="button" class="btn btn-add" onclick="addEmployee()">+ Adicionar Trabalhador</button>
-            <button type="button" class="btn btn-export" onclick="exportarECompartilhar()">📥 Salvar e Baixar Planilha</button>
+            
+            <!-- EXPORTAÇÕES -->
+            <button type="button" class="btn btn-export" onclick="exportarECompartilhar()">📊 Salvar e Baixar Excel</button>
+            <button type="button" class="btn btn-export-pdf" onclick="exportarPDF()">📄 Baixar Relatório em PDF</button>
+            
             <button type="button" class="btn btn-clear" onclick="limparSemana()">🗑️ Limpar Todos os Horários (Nova Semana)</button>
             
-            <!-- BOTÕES DE BACKUP E RESTAURAÇÃO -->
             <div class="backup-row">
                 <button type="button" class="btn-backup" onclick="generateBackup()">💾 Gerar Backup</button>
                 <button type="button" class="btn-restore" onclick="triggerRestore()">📂 Restaurar</button>
@@ -232,7 +236,6 @@
         let toastTimeout;
         let data = [];
 
-        /* --- TEMA (MODO ESCURO / CLARO) --- */
         function checkTheme() {
             let isDark = localStorage.getItem('appPonto_Theme') === 'dark';
             if (isDark) {
@@ -247,7 +250,6 @@
             document.getElementById('theme-btn').innerText = isDark ? "☀️ Modo Claro" : "🌙 Modo Escuro";
         }
 
-        /* --- INICIALIZAÇÃO E REGRAS --- */
         function initApp() {
             activeRule = localStorage.getItem('appPonto_Rule_Clean');
             
@@ -283,7 +285,6 @@
             });
         }
 
-        /* --- PESQUISA E ORDENAÇÃO --- */
         function filterEmployees(val) {
             searchTerm = val.toLowerCase();
             render();
@@ -302,12 +303,8 @@
             showAlert("✅ Lista organizada em ordem alfabética!");
         }
 
-        /* --- BACKUP E RESTAURAÇÃO --- */
         function generateBackup() {
-            let backupObj = {
-                regra: activeRule,
-                dados: data
-            };
+            let backupObj = { regra: activeRule, dados: data };
             let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupObj));
             let dlAnchorElem = document.createElement('a');
             dlAnchorElem.setAttribute("href", dataStr);
@@ -348,7 +345,6 @@
             event.target.value = ''; 
         }
 
-        /* --- LÓGICA DE DADOS E MODAIS --- */
         let confirmActionCallback = null;
         function closeModal() { document.getElementById('custom-modal').style.display = 'none'; }
         
@@ -634,6 +630,7 @@
             }
         }
 
+        // --- FUNÇÃO DO EXCEL ---
         function exportarECompartilhar() {
             if (typeof XLSX === 'undefined') {
                 showAlert("⚠️ O sistema precisa de conexão com a internet na primeira vez para gerar o arquivo.");
@@ -672,14 +669,108 @@
 
                 let ws = XLSX.utils.aoa_to_sheet(ws_data);
                 XLSX.utils.book_append_sheet(wb, ws, `Ponto ${activeRule}`);
-                
-                let nomeArquivo = `Controle_de_Ponto_${activeRule}.xlsx`;
-                
-                XLSX.writeFile(wb, nomeArquivo);
+                XLSX.writeFile(wb, `Controle_de_Ponto_${activeRule}.xlsx`);
                 showAlert("✅ Planilha baixada com sucesso!\n\nVerifique a pasta de Downloads.");
-
             } catch (error) {
                 showAlert("Erro ao exportar: " + error.message);
+            }
+        }
+
+        // --- FUNÇÃO DO PDF (Atualizada com "Escala de Horários") ---
+        function exportarPDF() {
+            if (!window.jspdf || !window.jspdf.jsPDF) {
+                showAlert("⚠️ O sistema precisa de conexão com a internet para gerar o PDF.");
+                return;
+            }
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                // Título Global
+                doc.setFontSize(16);
+                doc.setTextColor(118, 17, 19); 
+                doc.text(`Escala de Horários - Regra ${activeRule.toUpperCase()}`, 14, 20);
+
+                let yPos = 30;
+
+                if (data.length === 0) {
+                    showAlert("Nenhum trabalhador cadastrado para exportar.");
+                    return;
+                }
+
+                data.forEach((emp, index) => {
+                    if (yPos > 240) { 
+                        doc.addPage();
+                        yPos = 20;
+                    }
+
+                    // Nome do Funcionário
+                    doc.setFontSize(12);
+                    doc.setTextColor(45, 55, 72); 
+                    doc.setFont(undefined, 'bold');
+                    doc.text(`Funcionário(a): ${emp.name || "Não Identificado"}`, 14, yPos);
+                    yPos += 5;
+
+                    let tableData = [];
+                    let weekMin = 0;
+
+                    DAYS.forEach((dName, i) => {
+                        let d = emp.days[i];
+                        let min = calculateDay(d);
+                        weekMin += min;
+                        tableData.push([
+                            dName,
+                            d.in || "--:--",
+                            d.bout || "--:--",
+                            d.bin || "--:--",
+                            d.out || "--:--",
+                            formatTime(min)
+                        ]);
+                    });
+
+                    let statusText = weekMin > LIMIT_WEEK ? `EXCEDEU ${activeRule.toUpperCase()}` : "DENTRO DO LIMITE";
+
+                    // Linha de Resumo Semanal
+                    tableData.push([
+                        "RESUMO DA SEMANA",
+                        "", "", "",
+                        statusText,
+                        formatTime(weekMin)
+                    ]);
+
+                    // Gerar a Tabela em PDF
+                    doc.autoTable({
+                        startY: yPos,
+                        head: [['Dia', 'Entrada', 'Saída Int.', 'Retorno Int.', 'Saída', 'Total']],
+                        body: tableData,
+                        theme: 'grid',
+                        headStyles: { fillColor: [118, 17, 19], textColor: [255, 255, 255] },
+                        styles: { fontSize: 10, halign: 'center' },
+                        columnStyles: { 0: { halign: 'left', fontStyle: 'bold' } },
+                        didParseCell: function(dataObj) {
+                            // Aplicar estilo destacado à última linha (Resumo)
+                            if (dataObj.row.index === 7) { 
+                                dataObj.cell.styles.fillColor = [240, 240, 240];
+                                dataObj.cell.styles.fontStyle = 'bold';
+                                if (dataObj.column.index === 4 && weekMin > LIMIT_WEEK) {
+                                    dataObj.cell.styles.textColor = [200, 0, 0]; // Vermelho se exceder a jornada
+                                } else if (dataObj.column.index === 4 && weekMin > 0) {
+                                    dataObj.cell.styles.textColor = [34, 139, 34]; // Verde se estiver OK
+                                }
+                            }
+                        }
+                    });
+
+                    // Atualiza a posição Y para a próxima tabela (espaço de 15px entre tabelas)
+                    yPos = doc.lastAutoTable.finalY + 15;
+                });
+
+                // Novo nome do arquivo PDF salvo
+                doc.save(`Escala_Horarios_${activeRule}.pdf`);
+                showAlert("✅ PDF gerado com sucesso!\n\nVerifique a pasta de Downloads.");
+            } catch (error) {
+                showAlert("Erro ao gerar PDF: " + error.message);
             }
         }
     </script>
