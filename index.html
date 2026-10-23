@@ -51,7 +51,9 @@
         input[type="time"] { padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 16px; background: white; color: #2d3748; }
         
         .totals { display: flex; justify-content: space-between; margin-top: 10px; padding: 8px; border-radius: 6px; background: #edf2f7; font-weight: bold; font-size: 14px; color: #2d3748; }
-        .alert-red { background-color: #fed7d7 !important; color: #c53030 !important; }
+        
+        /* CORREÇÃO DO ALERTA: Fundo vermelho claro e letra PRETA em negrito */
+        .alert-red { background-color: #fed7d7 !important; color: #000000 !important; font-weight: bold !important; }
         
         .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.2s; }
         .btn-add { background-color: var(--mr-bordo); color: white; border: 1px solid #5a0d0f; }
@@ -66,7 +68,8 @@
         .btn-clear-day { background-color: transparent; border: none; font-size: 16px; cursor: pointer; opacity: 0.6; padding: 2px 5px; }
         
         .week-summary { background: var(--mr-bordo); color: white; padding: 15px; border-radius: 8px; margin-top: 5px; text-align: center; font-weight: bold; border: 1px solid #5a0d0f; }
-        .week-summary.alert-red { background-color: #c53030 !important; border-color: #9b2c2c !important; }
+        /* Quando passar da semana, o resumo semanal ganha fundo vermelho claro e texto preto */
+        .week-summary.alert-red { background-color: #fed7d7 !important; color: #000000 !important; border-color: #feb2b2 !important; }
         
         .empty-state { text-align: center; padding: 30px 15px; color: #718096; font-size: 16px; }
 
@@ -291,7 +294,6 @@
             }
         }
 
-        // Função de Adicionar Trabalhador sem horários pré-preenchidos
         function addEmployee() {
             let newEmp = { name: "", minimized: false, days: [] };
             for(let i=0; i<7; i++) {
