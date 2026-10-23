@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Ponto</title>
+    <!-- Biblioteca do Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --mr-bordo: #761113;
+            --mr-bege: #dcb98a;
+            --mr-bege-escuro: #c89f70;
+            --mr-fundo: #f4f1ea;
+        }
+
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background-color: var(--mr-fundo); margin: 0; padding: 0; padding-bottom: 40px; }
+        
+        .header { background-color: #ffffff; padding: 20px 15px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 10px rgba(118, 17, 19, 0.1); border-bottom: 3px solid var(--mr-bege); }
+        .header-title { font-size: 20px; font-weight: bold; color: var(--mr-bordo); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        .btn-change-rule { background: var(--mr-fundo); border: 1px solid var(--mr-bege-escuro); color: var(--mr-bordo); padding: 5px 12px; border-radius: 12px; font-size: 12px; cursor: pointer; font-weight: bold; }
+        
+        .container { padding: 15px; max-width: 600px; margin: 0 auto; }
+        
+        .welcome-screen { text-align: center; padding: 50px 15px; background-color: #ffffff; border-radius: 0 0 20px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .welcome-title { font-size: 24px; color: var(--mr-bordo); font-weight: bold; margin-bottom: 10px; }
+        .welcome-text { font-size: 16px; color: #4a5568; margin-bottom: 30px; line-height: 1.5; }
+        
+        .rule-card { background: white; border: 2px solid var(--mr-bege); border-radius: 12px; padding: 20px; margin-bottom: 15px; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .rule-card:active { transform: scale(0.98); background-color: #fff9f0; border-color: var(--mr-bordo); }
+        .rule-title { font-size: 18px; font-weight: bold; color: var(--mr-bordo); margin-bottom: 5px; }
+        .rule-desc { font-size: 14px; color: #4a5568; }
+
+        .dica { font-size: 13px; color: var(--mr-bordo); text-align: center; margin-bottom: 15px; background: #fff5f5; padding: 10px; border-radius: 8px; border: 1px solid var(--mr-bege); }
+        
+        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 4px solid var(--mr-bordo); }
+        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 2px solid #edf2f7; padding-bottom: 10px; flex-wrap: wrap; gap: 10px; }
+        .emp-name { flex-grow: 1; font-size: 18px; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; box-sizing: border-box; font-weight: bold; min-width: 150px; color: var(--mr-bordo); }
+        .action-buttons { display: flex; gap: 5px; flex-wrap: wrap; }
+        
+        .day-block { background: #faf8f5; padding: 12px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .weekend-block { background: #eef2f6; border-color: #cbd5e0; } 
+        
+        .day-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .day-name { font-weight: bold; color: #2d3748; }
+        .day-actions { display: flex; align-items: center; gap: 6px; }
+        
+        .time-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .input-group { display: flex; flex-direction: column; }
+        .input-group label { font-size: 12px; color: #718096; margin-bottom: 4px; font-weight: 500; }
+        input[type="time"] { padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 16px; background: white; color: #2d3748; }
+        
+        .totals { display: flex; justify-content: space-between; margin-top: 10px; padding: 8px; border-radius: 6px; background: #edf2f7; font-weight: bold; font-size: 14px; color: #2d3748; }
+        .alert-red { background-color: #fed7d7 !important; color: #c53030 !important; }
+        
+        .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.2s; }
+        .btn-add { background-color: var(--mr-bordo); color: white; border: 1px solid #5a0d0f; }
+        .btn-export { background-color: var(--mr-bege-escuro); color: white; margin-top: 20px; }
+        .btn-clear { background-color: transparent; color: #e53e3e; margin-top: 5px; border: 1px solid #e53e3e; }
+        
+        .btn-toggle { background-color: #718096; color: white; padding: 8px 12px; border-radius: 6px; font-size: 14px; border: none; cursor: pointer; }
+        .btn-copy-emp { background-color: var(--mr-bege-escuro); color: white; padding: 8px 12px; border-radius: 6px; font-size: 14px; border: none; cursor: pointer; }
+        .btn-remove { background-color: #e53e3e; color: white; padding: 8px 12px; border-radius: 6px; font-size: 14px; border: none; cursor: pointer; }
+        
+        .btn-copy-day { background-color: var(--mr-bege); color: var(--mr-bordo); padding: 4px 8px; border-radius: 4px; font-size: 12px; border: none; cursor: pointer; font-weight: bold; }
+        .btn-clear-day { background-color: transparent; border: none; font-size: 16px; cursor: pointer; opacity: 0.6; padding: 2px 5px; }
+        
+        .week-summary { background: var(--mr-bordo); color: white; padding: 15px; border-radius: 8px; margin-top: 5px; text-align: center; font-weight: bold; border: 1px solid #5a0d0f; }
+        .week-summary.alert-red { background-color: #c53030 !important; border-color: #9b2c2c !important; }
+        
+        .empty-state { text-align: center; padding: 30px 15px; color: #718096; font-size: 16px; }
+
+        #toast-salvo { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #48bb78; color: white; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.3s ease-in-out; pointer-events: none; z-index: 1000; }
+        .show-toast { opacity: 1 !important; }
+        
+        #custom-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 9999; align-items: center; justify-content: center; padding: 15px; }
+        .modal-box { background: white; padding: 20px; border-radius: 12px; max-width: 320px; width: 100%; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border-top: 5px solid var(--mr-bordo); }
+        .modal-text { margin-bottom: 15px; font-size: 16px; color: #2d3748; white-space: pre-line; }
+        .modal-buttons { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+        .modal-btn-cancel { flex: 1; padding: 12px; border: none; border-radius: 8px; background: #e2e8f0; color: #2d3748; font-weight: bold; cursor: pointer; }
+        .modal-btn-confirm { flex: 1; padding: 12px; border: none; border-radius: 8px; background: var(--mr-bordo); color: white; font-weight: bold; cursor: pointer; }
+        .modal-btn-danger { background: #e53e3e !important; }
+
+        .copy-days-list { text-align: left; margin: 10px 0; max-height: 200px; overflow-y: auto; }
+        .copy-day-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 15px; color: #2d3748; cursor: pointer; }
+        .copy-day-item input { width: 18px; height: 18px; accent-color: var(--mr-bordo); cursor: pointer; }
+
+        #webview-blocker { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--mr-bordo); color: white; z-index: 10000; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 20px; box-sizing: border-box; }
+        .webview-icon { font-size: 50px; margin-bottom: 20px; }
+        .webview-title { font-size: 24px; font-weight: bold; margin-bottom: 15px; color: var(--mr-bege); }
+        .webview-text { font-size: 18px; line-height: 1.5; margin-bottom: 40px; }
+        .webview-arrow { font-size: 60px; position: absolute; bottom: 30px; right: 30px; animation: bounce 1s infinite alternate; }
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(15px); } }
+        
+        body.is-blocked > div:not(#webview-blocker) { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="webview-blocker">
+        <div class="webview-icon">📱</div>
+        <div class="webview-title">Libere o acesso ao Sistema</div>
+        <div class="webview-text">
+            O WhatsApp no iPhone bloqueia o download de documentos.<br><br>
+            Toque no ícone da <b>Bússola 🧭</b> ou nos <b>três pontinhos (...)</b> no canto inferior da tela para abrir no <b>Safari</b> com segurança.
+        </div>
+        <div class="webview-arrow">↘️</div>
+    </div>
+
+    <!-- TELA DE ESCOLHA DA REGRA -->
+    <div id="welcome-screen" class="welcome-screen" style="display: none;">
+        <div class="welcome-title">Controle de Ponto</div>
+        <div class="welcome-text">Selecione a jornada de trabalho da sua empresa para iniciar o preenchimento:</div>
+        
+        <div class="rule-card" onclick="setRule('40h')">
+            <div class="rule-title">⌚ Regra 40 Horas</div>
+            <div class="rule-desc">08:00 diárias / 40:00 semanais</div>
+        </div>
+
+        <div class="rule-card" onclick="setRule('42h')">
+            <div class="rule-title">⌚ Regra 42 Horas</div>
+            <div class="rule-desc">08:24 diárias / 42:00 semanais</div>
+        </div>
+    </div>
+
+    <!-- APLICATIVO PRINCIPAL -->
+    <div id="main-app" style="display: none;">
+        <div class="header">
+            <div class="header-title" id="app-title">Controle de Ponto</div>
+            <button class="btn-change-rule" onclick="changeRule()">⚙️ Trocar Regra</button>
+        </div>
+
+        <div class="container" style="padding-bottom: 0; padding-top: 20px;">
+            <div class="dica">💡 <b>Dica:</b> Use o botão <b>📋 Copiar</b> em qualquer dia para duplicar o horário preenchido para os dias desejados.</div>
+        </div>
+
+        <div class="container" id="app-container"></div>
+
+        <div class="container" style="padding-top: 0;">
+            <button type="button" class="btn btn-add" onclick="addEmployee()">+ Adicionar Trabalhador</button>
+            <button type="button" class="btn btn-export" onclick="exportarECompartilhar()">📥 Salvar e Baixar Planilha</button>
+            <button type="button" class="btn btn-clear" onclick="limparSemana()">🗑️ Limpar Todos os Horários (Nova Semana)</button>
+        </div>
+    </div>
+
+    <div id="toast-salvo">✔ Salvo automaticamente</div>
+
+    <div id="custom-modal">
+        <div class="modal-box">
+            <div class="modal-text" id="modal-text">Mensagem</div>
+            <div class="modal-buttons" id="modal-buttons-container">
+                <button type="button" class="modal-btn-cancel" id="modal-btn-cancel" onclick="closeModal()">Cancelar</button>
+                <button type="button" class="modal-btn-confirm" id="modal-btn-confirm">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var ua = navigator.userAgent || navigator.vendor || window.opera;
+            var isIOS = /iPad|iPhone|iPod/.test(ua) && !window.MSStream;
+            var isWhatsAppOrInstagram = (ua.indexOf("WhatsApp") > -1 || ua.indexOf("Instagram") > -1 || ua.indexOf("FBAN") > -1 || ua.indexOf("FBAV") > -1);
+            
+            if (isIOS && isWhatsAppOrInstagram) {
+                document.getElementById('webview-blocker').style.display = 'flex';
+                document.body.classList.add('is-blocked');
+            } else {
+                initApp(); 
+            }
+        });
+
+        const DAYS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
+        let LIMIT_DAY = 0; 
+        let LIMIT_WEEK = 0; 
+        let activeRule = ""; 
+        let toastTimeout;
+        let data = [];
+
+        function initApp() {
+            activeRule = localStorage.getItem('appPonto_Rule_Clean');
+            
+            if (!activeRule) {
+                document.getElementById('welcome-screen').style.display = 'block';
+                document.getElementById('main-app').style.display = 'none';
+            } else {
+                document.getElementById('welcome-screen').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+
+                if (activeRule === '40h') {
+                    LIMIT_DAY = 480; 
+                    LIMIT_WEEK = 2400; 
+                    document.getElementById('app-title').innerText = "Controle de Ponto - Regra 40h";
+                } else {
+                    LIMIT_DAY = 504; 
+                    LIMIT_WEEK = 2520; 
+                    document.getElementById('app-title').innerText = "Controle de Ponto - Regra 42h";
+                }
+
+                data = JSON.parse(localStorage.getItem('appPonto_Data_Clean')) || [];
+                render();
+            }
+        }
+
+        function setRule(rule) {
+            localStorage.setItem('appPonto_Rule_Clean', rule);
+            initApp();
+        }
+
+        function changeRule() {
+            askConfirm("Deseja trocar a regra da empresa?\n\nOs trabalhadores e os horários que você já preencheu serão mantidos na nova regra.", "Trocar Regra", false, () => {
+                localStorage.removeItem('appPonto_Rule_Clean');
+                initApp();
+            });
+        }
+
+        let confirmActionCallback = null;
+        function closeModal() { document.getElementById('custom-modal').style.display = 'none'; }
+        
+        function askConfirm(msg, btnLabel, isDanger, callback) {
+            document.getElementById('modal-text').innerText = msg;
+            document.getElementById('modal-btn-cancel').style.display = 'block';
+            let btnConfirm = document.getElementById('modal-btn-confirm');
+            btnConfirm.innerText = btnLabel;
+            if (isDanger) btnConfirm.classList.add('modal-btn-danger');
+            else btnConfirm.classList.remove('modal-btn-danger');
+            confirmActionCallback = callback;
+            btnConfirm.onclick = function() { closeModal(); if (confirmActionCallback) confirmActionCallback(); };
+            document.getElementById('custom-modal').style.display = 'flex';
+        }
+
+        function showAlert(msg) {
+            document.getElementById('modal-text').innerText = msg;
+            document.getElementById('modal-btn-cancel').style.display = 'none';
+            let btnConfirm = document.getElementById('modal-btn-confirm');
+            btnConfirm.innerText = "Entendido";
+            btnConfirm.classList.remove('modal-btn-danger');
+            btnConfirm.onclick = closeModal;
+            document.getElementById('custom-modal').style.display = 'flex';
+        }
+
+        function openCopyModal(empIndex, sourceDayIndex) {
+            let sourceData = data[empIndex].days[sourceDayIndex];
+            if (!sourceData.in && !sourceData.out) {
+                showAlert(`Preencha os horários de ${DAYS[sourceDayIndex]} primeiro.`);
+                return;
+            }
+
+            let modalText = document.getElementById('modal-text');
+            
+            let html = `<b>Copiar horários de ${DAYS[sourceDayIndex]} para:</b><div class="copy-days-list">`;
+            DAYS.forEach((dName, idx) => {
+                if (idx !== sourceDayIndex) {
+                    html += `<label class="copy-day-item"><input type="checkbox" class="copy-target-checkbox" value="${idx}"> ${dName}</label>`;
+                }
+            });
+            html += `</div>`;
+            
+            modalText.innerHTML = html;
+            document.getElementById('modal-btn-cancel').style.display = 'block';
+            
+            let btnConfirm = document.getElementById('modal-btn-confirm');
+            btnConfirm.innerText = "Copiar";
+            btnConfirm.classList.remove('modal-btn-danger');
+            
+            btnConfirm.onclick = function() {
+                let checkboxes = document.querySelectorAll('.copy-target-checkbox:checked');
+                if (checkboxes.length === 0) {
+                    showAlert("Selecione pelo menos um dia de destino.");
+                    return;
+                }
+                checkboxes.forEach(cb => {
+                    let targetDayIndex = parseInt(cb.value);
+                    data[empIndex].days[targetDayIndex] = { ...sourceData };
+                });
+                saveLocal();
+                render();
+                closeModal();
+                showAlert("Horários copiados com sucesso!");
+            };
+            
+            document.getElementById('custom-modal').style.display = 'flex';
+        }
+
+        function saveLocal(showToast = true) {
+            localStorage.setItem('appPonto_Data_Clean', JSON.stringify(data));
+            if(showToast) {
+                let toast = document.getElementById('toast-salvo');
+                toast.classList.add('show-toast');
+                clearTimeout(toastTimeout);
+                toastTimeout = setTimeout(() => { toast.classList.remove('show-toast'); }, 2000);
+            }
+        }
+
+        // Função de Adicionar Trabalhador sem horários pré-preenchidos
+        function addEmployee() {
+            let newEmp = { name: "", minimized: false, days: [] };
+            for(let i=0; i<7; i++) {
+                newEmp.days.push({ in: "", bout: "", bin: "", out: "" });
+            }
+            data.push(newEmp);
+            saveLocal(false);
+            render();
+        }
+
+        function duplicateEmployee(index) {
+            let empCopy = JSON.parse(JSON.stringify(data[index])); 
+            empCopy.name = empCopy.name ? empCopy.name + " (Cópia)" : "Cópia";
+            empCopy.minimized = false; 
+            data.splice(index + 1, 0, empCopy); 
+            saveLocal(false);
+            render();
+            showAlert("Trabalhador duplicado com sucesso!");
+        }
+
+        function removeEmployee(index) {
+            askConfirm("Deseja remover este trabalhador do sistema?", "Excluir", true, () => {
+                data.splice(index, 1);
+                saveLocal(false);
+                render();
+            });
+        }
+
+        function toggleEmployee(index) {
+            data[index].minimized = !data[index].minimized;
+            saveLocal(false);
+            render();
+        }
+
+        function limparSemana() {
+            askConfirm("Isso irá preparar o app para uma nova semana, apagando os horários preenchidos, mas MANTENDO o nome dos funcionários.\n\nDeseja continuar?", "Iniciar Nova Semana", true, () => {
+                data.forEach(emp => {
+                    emp.days.forEach(d => { d.in = ""; d.bout = ""; d.bin = ""; d.out = ""; });
+                });
+                saveLocal(false);
+                render();
+                showAlert("Pronto! Sistema limpo para a nova semana.");
+            });
+        }
+
+        function clearDay(empIndex, dayIndex) {
+            askConfirm("Limpar horários deste dia?", "Limpar", true, () => {
+                data[empIndex].days[dayIndex] = { in: "", bout: "", bin: "", out: "" };
+                saveLocal();
+                render();
+            });
+        }
+
+        function parseTime(timeStr) {
+            if (!timeStr) return null;
+            let parts = timeStr.split(':');
+            return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+        }
+
+        function formatTime(minutes) {
+            if (minutes === 0) return "00:00";
+            let h = Math.floor(minutes / 60);
+            let m = minutes % 60;
+            return h.toString().padStart(2, '0') + ':' + m.toString().padStart(2, '0');
+        }
+
+        function calculateDay(dayData) {
+            let tIn = parseTime(dayData.in);
+            let tBout = parseTime(dayData.bout);
+            let tBin = parseTime(dayData.bin);
+            let tOut = parseTime(dayData.out);
+            if (tIn === null || tOut === null) return 0;
+            let total = tOut - tIn;
+            if (total < 0) total += 1440; 
+            if (tBout !== null && tBin !== null) {
+                let brk = tBin - tBout;
+                if (brk < 0) brk += 1440;
+                total -= brk;
+            }
+            return total > 0 ? total : 0;
+        }
+
+        function handleInput(empIndex, dayIndex, field, value) {
+            data[empIndex].days[dayIndex][field] = value;
+            saveLocal();
+            
+            let dayMin = calculateDay(data[empIndex].days[dayIndex]);
+            let totalEl = document.getElementById(`tot-${empIndex}-${dayIndex}`);
+            totalEl.innerText = "Total: " + formatTime(dayMin);
+            
+            if(dayMin > LIMIT_DAY) {
+                totalEl.classList.add('alert-red');
+                totalEl.innerText += " (Alerta!)";
+            } else {
+                totalEl.classList.remove('alert-red');
+            }
+            updateWeekTotal(empIndex);
+        }
+
+        function handleName(empIndex, value) {
+            data[empIndex].name = value;
+            saveLocal();
+        }
+
+        function updateWeekTotal(empIndex) {
+            let weekMin = 0;
+            data[empIndex].days.forEach(d => { weekMin += calculateDay(d); });
+            
+            let wTotalEl = document.getElementById(`weekTot-${empIndex}`);
+            wTotalEl.innerText = "Total da Semana: " + formatTime(weekMin);
+            
+            if(weekMin > LIMIT_WEEK) {
+                wTotalEl.classList.add('alert-red');
+                wTotalEl.innerText += ` 🚨 PASSOU DE ${activeRule.toUpperCase()}`;
+            } else {
+                wTotalEl.classList.remove('alert-red');
+            }
+        }
+
+        function render() {
+            const container = document.getElementById('app-container');
+            container.innerHTML = "";
+
+            if (data.length === 0) {
+                container.innerHTML = "<div class='empty-state'>Nenhum trabalhador cadastrado.<br><br>Clique em <b>+ Adicionar Trabalhador</b> para começar a preencher.</div>";
+                return;
+            }
+
+            data.forEach((emp, empIndex) => {
+                let isMin = emp.minimized ? true : false;
+                let toggleIcon = isMin ? "▼ Mostrar" : "▲ Ocultar";
+
+                let card = document.createElement('div');
+                card.className = 'card';
+
+                let header = document.createElement('div');
+                header.className = 'card-header';
+                header.innerHTML = `
+                    <input type="text" class="emp-name" placeholder="Digite o Nome do Trabalhador" value="${emp.name}" oninput="handleName(${empIndex}, this.value)">
+                    <div class="action-buttons">
+                        <button type="button" class="btn-toggle" onclick="toggleEmployee(${empIndex})">${toggleIcon}</button>
+                        <button type="button" class="btn-copy-emp" onclick="duplicateEmployee(${empIndex})" title="Duplicar">📄 Copiar</button>
+                        <button type="button" class="btn-remove" onclick="removeEmployee(${empIndex})" title="Remover">X</button>
+                    </div>
+                `;
+                card.appendChild(header);
+
+                let weekMin = 0;
+                let daysContainer = document.createElement('div');
+                daysContainer.style.display = isMin ? 'none' : 'block';
+
+                DAYS.forEach((dayName, dayIndex) => {
+                    let dData = emp.days[dayIndex];
+                    let dayMin = calculateDay(dData);
+                    weekMin += dayMin;
+
+                    let isRedDay = dayMin > LIMIT_DAY ? 'alert-red' : '';
+                    let textDay = dayMin > LIMIT_DAY ? " (Alerta!)" : "";
+                    
+                    let isWeekend = (dayIndex === 0 || dayIndex === 6) ? 'weekend-block' : '';
+                    let copyBtn = `<button type="button" class="btn-copy-day" onclick="openCopyModal(${empIndex}, ${dayIndex})" title="Copiar este dia">📋 Copiar</button>`;
+
+                    let dayBlock = document.createElement('div');
+                    dayBlock.className = `day-block ${isWeekend}`;
+                    dayBlock.innerHTML = `
+                        <div class="day-header">
+                            <div class="day-name">${dayName}</div>
+                            <div class="day-actions">
+                                ${copyBtn}
+                                <button type="button" class="btn-clear-day" onclick="clearDay(${empIndex}, ${dayIndex})" title="Limpar">🗑️</button>
+                            </div>
+                        </div>
+                        <div class="time-grid">
+                            <div class="input-group"><label>Entrada</label><input type="time" value="${dData.in}" onchange="handleInput(${empIndex}, ${dayIndex}, 'in', this.value)"></div>
+                            <div class="input-group"><label>Saída Int.</label><input type="time" value="${dData.bout}" onchange="handleInput(${empIndex}, ${dayIndex}, 'bout', this.value)"></div>
+                            <div class="input-group"><label>Ret. Int.</label><input type="time" value="${dData.bin}" onchange="handleInput(${empIndex}, ${dayIndex}, 'bin', this.value)"></div>
+                            <div class="input-group"><label>Saída</label><input type="time" value="${dData.out}" onchange="handleInput(${empIndex}, ${dayIndex}, 'out', this.value)"></div>
+                        </div>
+                        <div class="totals ${isRedDay}" id="tot-${empIndex}-${dayIndex}">Total: ${formatTime(dayMin)}${textDay}</div>
+                    `;
+                    daysContainer.appendChild(dayBlock);
+                });
+
+                card.appendChild(daysContainer);
+
+                let isRedWeek = weekMin > LIMIT_WEEK ? 'alert-red' : '';
+                let textWeek = weekMin > LIMIT_WEEK ? ` 🚨 PASSOU DE ${activeRule.toUpperCase()}` : "";
+                
+                let weekBlock = document.createElement('div');
+                weekBlock.className = `week-summary ${isRedWeek}`;
+                weekBlock.id = `weekTot-${empIndex}`;
+                weekBlock.innerText = `Total da Semana: ${formatTime(weekMin)}${textWeek}`;
+                card.appendChild(weekBlock);
+
+                container.appendChild(card);
+            });
+        }
+
+        function exportarECompartilhar() {
+            if (typeof XLSX === 'undefined') {
+                showAlert("⚠️ O sistema precisa de conexão com a internet na primeira vez para gerar o arquivo.\n\nVerifique sua conexão e recarregue a página.");
+                return;
+            }
+
+            try {
+                let wb = XLSX.utils.book_new();
+                let ws_data = [];
+
+                let linha1 = ["Funcionário"];
+                let linha2 = [""];
+                DAYS.forEach(d => {
+                    linha1.push(d, "", "", "", "");
+                    linha2.push("Entrada", "Saída Int.", "Retorno Int.", "Saída", "Total");
+                });
+                linha1.push("Resumo Semanal", "");
+                linha2.push("Horas Totais", "Status");
+
+                ws_data.push(linha1);
+                ws_data.push(linha2);
+
+                data.forEach(emp => {
+                    let row = [emp.name || "Não Identificado"];
+                    let weekMin = 0;
+                    DAYS.forEach((_, i) => {
+                        let d = emp.days[i];
+                        let min = calculateDay(d);
+                        weekMin += min;
+                        row.push(d.in, d.bout, d.bin, d.out, formatTime(min));
+                    });
+                    row.push(formatTime(weekMin));
+                    row.push(weekMin > LIMIT_WEEK ? `🚨 EXCEDEU ${activeRule}` : "OK");
+                    ws_data.push(row);
+                });
+
+                let ws = XLSX.utils.aoa_to_sheet(ws_data);
+                XLSX.utils.book_append_sheet(wb, ws, `Ponto ${activeRule}`);
+                
+                let nomeArquivo = `Controle_de_Ponto_${activeRule}.xlsx`;
+                XLSX.writeFile(wb, nomeArquivo);
+
+                showAlert("✅ Planilha baixada com sucesso!\n\nVerifique a pasta de Downloads do seu celular para enviar o arquivo.");
+
+            } catch (error) {
+                showAlert("Erro ao exportar: " + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
