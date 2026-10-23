@@ -62,9 +62,9 @@
         
         .control-panel { background: var(--card-bg); padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 4px solid var(--mr-bege-escuro); }
         .control-panel label { font-size: 14px; font-weight: bold; color: var(--text-main); margin-bottom: 5px; display: block; }
-        .form-control { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; box-sizing: border-box; font-size: 16px; background: var(--input-bg); color: var(--text-main); }
-        .search-row { display: flex; gap: 10px; }
-        .btn-sort { background: #718096; color: white; border: none; border-radius: 6px; padding: 0 15px; cursor: pointer; font-weight: bold; white-space: nowrap; }
+        .form-control { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; box-sizing: border-box; font-size: 16px; background: var(--input-bg); color: var(--text-main); color-scheme: light dark; }
+        .search-row { display: flex; gap: 10px; align-items: center; }
+        .btn-sort { background: #718096; color: white; border: none; border-radius: 6px; padding: 0 15px; cursor: pointer; font-weight: bold; white-space: nowrap; height: 100%; }
         
         .card { background: var(--card-bg); padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); border-left: 4px solid var(--mr-bordo); }
         .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; flex-wrap: wrap; gap: 10px; }
@@ -81,7 +81,7 @@
         .time-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .input-group { display: flex; flex-direction: column; }
         .input-group label { font-size: 12px; color: var(--text-sec); margin-bottom: 4px; font-weight: bold; }
-        input[type="time"] { padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 16px; background: var(--input-bg); color: var(--text-main); }
+        input[type="time"] { padding: 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 16px; background: var(--input-bg); color: var(--text-main); color-scheme: light dark; }
         
         .totals { display: flex; justify-content: space-between; margin-top: 10px; padding: 8px; border-radius: 6px; background: var(--day-weekend-bg); font-weight: bold; font-size: 14px; color: var(--text-main); border: 1px solid var(--border-color); }
         
@@ -91,7 +91,7 @@
         .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.2s; }
         .btn-add { background-color: var(--mr-bordo); color: white; border: 1px solid #5a0d0f; }
         .btn-export { background-color: var(--mr-bege-escuro); color: white; margin-top: 10px; }
-        .btn-export-pdf { background-color: #2b6cb0; color: white; } /* Botão do PDF */
+        .btn-export-pdf { background-color: #2b6cb0; color: white; } 
         .btn-clear { background-color: transparent; color: #e53e3e; margin-top: 5px; border: 1px solid #e53e3e; }
         
         .backup-row { display: flex; gap: 10px; margin-top: 20px; border-top: 2px dashed var(--border-color); padding-top: 20px; }
@@ -172,13 +172,31 @@
         </div>
 
         <div class="container" style="padding-bottom: 0; padding-top: 20px;">
+            
+            <!-- NOVO: DATAS DA SEMANA -->
+            <div class="control-panel" style="margin-bottom: 15px;">
+                <label style="color: var(--mr-bordo); font-size: 16px;">📅 Período da Escala</label>
+                <div class="search-row" style="margin-bottom: 10px;">
+                    <div style="flex: 1;">
+                        <label style="font-size: 12px;">Data Inicial (Domingo):</label>
+                        <input type="date" id="date-start" class="form-control" onchange="handleStartDate(this.value)">
+                    </div>
+                    <div style="flex: 1;">
+                        <label style="font-size: 12px;">Data Final:</label>
+                        <input type="date" id="date-end" class="form-control" onchange="handleEndDate(this.value)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- PESQUISA -->
             <div class="control-panel">
                 <label>🔍 Buscar Funcionário:</label>
-                <div class="search-row">
+                <div class="search-row" style="align-items: stretch;">
                     <input type="text" id="search-emp" class="form-control" style="margin-bottom: 0;" placeholder="Digite o nome..." oninput="filterEmployees(this.value)">
                     <button class="btn-sort" onclick="sortEmployees()" title="Ordenar A-Z">A-Z ↓</button>
                 </div>
             </div>
+            
             <div class="dica">💡 <b>Dica:</b> Use o botão <b>📋 Copiar</b> em qualquer dia para duplicar os horários para outros dias da semana.</div>
         </div>
 
@@ -268,10 +286,83 @@
                     document.getElementById('app-title').innerText = "Controle de Ponto - Regra 42h";
                 }
 
+                // Recupera as datas salvas
+                document.getElementById('date-start').value = localStorage.getItem('appPonto_DateStart') || "";
+                document.getElementById('date-end').value = localStorage.getItem('appPonto_DateEnd') || "";
+
                 data = JSON.parse(localStorage.getItem('appPonto_Data_Clean')) || [];
                 render();
             }
         }
+
+        // --- LÓGICA DO CALENDÁRIO ---
+        function handleStartDate(val) {
+            if (!val) {
+                localStorage.removeItem('appPonto_DateStart');
+                return;
+            }
+            
+            // Corrige o fuso horário quebrando a string 'YYYY-MM-DD'
+            let parts = val.split('-');
+            let date = new Date(parts[0], parts[1] - 1, parts[2]);
+            
+            // Verifica se não é Domingo (0 = Domingo)
+            if (date.getDay() !== 0) {
+                showAlert("⚠️ A data inicial da escala deve ser um Domingo.\n\nO sistema ajustou automaticamente para o Domingo correspondente à sua escolha.");
+                // Volta os dias necessários para cair no Domingo
+                date.setDate(date.getDate() - date.getDay());
+                
+                let yyyy = date.getFullYear();
+                let mm = String(date.getMonth() + 1).padStart(2, '0');
+                let dd = String(date.getDate()).padStart(2, '0');
+                val = `${yyyy}-${mm}-${dd}`;
+                document.getElementById('date-start').value = val;
+            }
+
+            localStorage.setItem('appPonto_DateStart', val);
+
+            // Sugere automaticamente a data final (+6 dias = Sábado)
+            if(!document.getElementById('date-end').value) {
+                let endDate = new Date(date);
+                endDate.setDate(endDate.getDate() + 6);
+                
+                let eY = endDate.getFullYear();
+                let eM = String(endDate.getMonth() + 1).padStart(2, '0');
+                let eD = String(endDate.getDate()).padStart(2, '0');
+                
+                document.getElementById('date-end').value = `${eY}-${eM}-${eD}`;
+                localStorage.setItem('appPonto_DateEnd', `${eY}-${eM}-${eD}`);
+            }
+        }
+
+        function handleEndDate(val) {
+            if (!val) {
+                localStorage.removeItem('appPonto_DateEnd');
+                return;
+            }
+            localStorage.setItem('appPonto_DateEnd', val);
+        }
+
+        // Formata data do padrão 'YYYY-MM-DD' para 'DD/MM/YYYY' para o PDF e Excel
+        function getFormattedPeriod() {
+            let start = document.getElementById('date-start').value;
+            let end = document.getElementById('date-end').value;
+            
+            if (!start && !end) return "";
+            
+            let text = "";
+            if (start) {
+                let s = start.split('-');
+                text += `${s[2]}/${s[1]}/${s[0]}`;
+            }
+            if (end) {
+                let e = end.split('-');
+                text += start ? ` a ${e[2]}/${e[1]}/${e[0]}` : `Até ${e[2]}/${e[1]}/${e[0]}`;
+            }
+            return text;
+        }
+        // -----------------------------
+
 
         function setRule(rule) {
             localStorage.setItem('appPonto_Rule_Clean', rule);
@@ -304,7 +395,12 @@
         }
 
         function generateBackup() {
-            let backupObj = { regra: activeRule, dados: data };
+            let backupObj = { 
+                regra: activeRule, 
+                dados: data,
+                dateStart: document.getElementById('date-start').value,
+                dateEnd: document.getElementById('date-end').value
+            };
             let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupObj));
             let dlAnchorElem = document.createElement('a');
             dlAnchorElem.setAttribute("href", dataStr);
@@ -330,8 +426,10 @@
                         activeRule = obj.regra || activeRule;
                         
                         localStorage.setItem('appPonto_Rule_Clean', activeRule);
+                        if(obj.dateStart) localStorage.setItem('appPonto_DateStart', obj.dateStart);
+                        if(obj.dateEnd) localStorage.setItem('appPonto_DateEnd', obj.dateEnd);
+
                         saveLocal(false);
-                        
                         initApp();
                         showAlert("✅ Arquivo de Backup restaurado com sucesso!");
                     } else {
@@ -460,6 +558,13 @@
                 data.forEach(emp => {
                     emp.days.forEach(d => { d.in = ""; d.bout = ""; d.bin = ""; d.out = ""; });
                 });
+                
+                // Limpa as datas na nova semana também
+                document.getElementById('date-start').value = "";
+                document.getElementById('date-end').value = "";
+                localStorage.removeItem('appPonto_DateStart');
+                localStorage.removeItem('appPonto_DateEnd');
+
                 saveLocal(false);
                 render();
                 showAlert("Pronto! Sistema limpo para a nova semana.");
@@ -640,6 +745,12 @@
             try {
                 let wb = XLSX.utils.book_new();
                 let ws_data = [];
+                
+                let textPeriod = getFormattedPeriod();
+                if (textPeriod) {
+                    ws_data.push([`Período da Escala: ${textPeriod}`]);
+                    ws_data.push([]);
+                }
 
                 let linha1 = ["Funcionário"];
                 let linha2 = [""];
@@ -676,7 +787,7 @@
             }
         }
 
-        // --- FUNÇÃO DO PDF (Atualizada com "Escala de Horários") ---
+        // --- FUNÇÃO DO PDF ---
         function exportarPDF() {
             if (!window.jspdf || !window.jspdf.jsPDF) {
                 showAlert("⚠️ O sistema precisa de conexão com a internet para gerar o PDF.");
@@ -693,6 +804,14 @@
                 doc.text(`Escala de Horários - Regra ${activeRule.toUpperCase()}`, 14, 20);
 
                 let yPos = 30;
+                let textPeriod = getFormattedPeriod();
+                
+                if (textPeriod) {
+                    doc.setFontSize(11);
+                    doc.setTextColor(100, 100, 100); 
+                    doc.text(`Período: ${textPeriod}`, 14, yPos);
+                    yPos += 10;
+                }
 
                 if (data.length === 0) {
                     showAlert("Nenhum trabalhador cadastrado para exportar.");
@@ -749,24 +868,21 @@
                         styles: { fontSize: 10, halign: 'center' },
                         columnStyles: { 0: { halign: 'left', fontStyle: 'bold' } },
                         didParseCell: function(dataObj) {
-                            // Aplicar estilo destacado à última linha (Resumo)
                             if (dataObj.row.index === 7) { 
                                 dataObj.cell.styles.fillColor = [240, 240, 240];
                                 dataObj.cell.styles.fontStyle = 'bold';
                                 if (dataObj.column.index === 4 && weekMin > LIMIT_WEEK) {
-                                    dataObj.cell.styles.textColor = [200, 0, 0]; // Vermelho se exceder a jornada
+                                    dataObj.cell.styles.textColor = [200, 0, 0]; 
                                 } else if (dataObj.column.index === 4 && weekMin > 0) {
-                                    dataObj.cell.styles.textColor = [34, 139, 34]; // Verde se estiver OK
+                                    dataObj.cell.styles.textColor = [34, 139, 34]; 
                                 }
                             }
                         }
                     });
 
-                    // Atualiza a posição Y para a próxima tabela (espaço de 15px entre tabelas)
                     yPos = doc.lastAutoTable.finalY + 15;
                 });
 
-                // Novo nome do arquivo PDF salvo
                 doc.save(`Escala_Horarios_${activeRule}.pdf`);
                 showAlert("✅ PDF gerado com sucesso!\n\nVerifique a pasta de Downloads.");
             } catch (error) {
