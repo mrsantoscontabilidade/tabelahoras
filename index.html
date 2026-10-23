@@ -52,8 +52,11 @@
         
         .totals { display: flex; justify-content: space-between; margin-top: 10px; padding: 8px; border-radius: 6px; background: #edf2f7; font-weight: bold; font-size: 14px; color: #2d3748; }
         
-        /* CORREÇÃO DO ALERTA: Fundo vermelho claro e letra PRETA em negrito */
-        .alert-red { background-color: #fed7d7 !important; color: #000000 !important; font-weight: bold !important; }
+        /* ALERTA VERMELHO: Fundo vermelho claro e letra preta em negrito */
+        .alert-red { background-color: #fed7d7 !important; color: #000000 !important; font-weight: bold !important; border-color: #feb2b2 !important; }
+        
+        /* ALERTA VERDE: Fundo verde claro e letra preta indicando que está dentro do limite */
+        .alert-green { background-color: #c6f6d5 !important; color: #22543d !important; font-weight: bold !important; border-color: #9ae6b4 !important; }
         
         .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.2s; }
         .btn-add { background-color: var(--mr-bordo); color: white; border: 1px solid #5a0d0f; }
@@ -68,8 +71,6 @@
         .btn-clear-day { background-color: transparent; border: none; font-size: 16px; cursor: pointer; opacity: 0.6; padding: 2px 5px; }
         
         .week-summary { background: var(--mr-bordo); color: white; padding: 15px; border-radius: 8px; margin-top: 5px; text-align: center; font-weight: bold; border: 1px solid #5a0d0f; }
-        /* Quando passar da semana, o resumo semanal ganha fundo vermelho claro e texto preto */
-        .week-summary.alert-red { background-color: #fed7d7 !important; color: #000000 !important; border-color: #feb2b2 !important; }
         
         .empty-state { text-align: center; padding: 30px 15px; color: #718096; font-size: 16px; }
 
@@ -403,13 +404,18 @@
             data[empIndex].days.forEach(d => { weekMin += calculateDay(d); });
             
             let wTotalEl = document.getElementById(`weekTot-${empIndex}`);
-            wTotalEl.innerText = "Total da Semana: " + formatTime(weekMin);
+            wTotalEl.innerText = `Total da Semana: ${formatTime(weekMin)}`;
             
-            if(weekMin > LIMIT_WEEK) {
+            // Remove ambas as classes antes de reavaliar
+            wTotalEl.classList.remove('alert-red', 'alert-green');
+
+            if (weekMin > LIMIT_WEEK) {
                 wTotalEl.classList.add('alert-red');
                 wTotalEl.innerText += ` 🚨 PASSOU DE ${activeRule.toUpperCase()}`;
-            } else {
-                wTotalEl.classList.remove('alert-red');
+            } else if (weekMin > 0) {
+                // Aplica o tom de verde claro se houver horas computadas e estiver dentro do limite
+                wTotalEl.classList.add('alert-green');
+                wTotalEl.innerText += ` ✅ DENTRO DO LIMITE (${activeRule.toUpperCase()})`;
             }
         }
 
@@ -479,16 +485,16 @@
 
                 card.appendChild(daysContainer);
 
-                let isRedWeek = weekMin > LIMIT_WEEK ? 'alert-red' : '';
-                let textWeek = weekMin > LIMIT_WEEK ? ` 🚨 PASSOU DE ${activeRule.toUpperCase()}` : "";
-                
+                // Renderização inicial do resumo da semana
                 let weekBlock = document.createElement('div');
-                weekBlock.className = `week-summary ${isRedWeek}`;
+                weekBlock.className = `week-summary`;
                 weekBlock.id = `weekTot-${empIndex}`;
-                weekBlock.innerText = `Total da Semana: ${formatTime(weekMin)}${textWeek}`;
                 card.appendChild(weekBlock);
 
                 container.appendChild(card);
+                
+                // Aplica a formatação correta de cor e texto na inicialização do card
+                updateWeekTotal(empIndex);
             });
         }
 
