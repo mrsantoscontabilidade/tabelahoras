@@ -53,7 +53,7 @@
         .welcome-title { font-size: 24px; color: var(--mr-bordo); font-weight: bold; margin-bottom: 10px; }
         .welcome-text { font-size: 16px; color: var(--text-sec); margin-bottom: 30px; line-height: 1.5; }
         
-        .rule-card { background: var(--bg-color); border: 2px solid var(--mr-bege); border-radius: 12px; padding: 20px; margin-bottom: 15px; cursor: pointer; transition: 0.2s; }
+        .rule-card { background: var(--bg-color); border: 2px solid var(--mr-bege); border-radius: 12px; padding: 20px; margin-bottom: 15px; cursor: pointer; transition: 0.2s; text-align: left; }
         .rule-card:active { transform: scale(0.98); border-color: var(--mr-bordo); }
         .rule-title { font-size: 18px; font-weight: bold; color: var(--mr-bordo); margin-bottom: 5px; }
         .rule-desc { font-size: 14px; color: var(--text-sec); }
@@ -91,7 +91,7 @@
         .btn { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: 0.2s; }
         .btn-add { background-color: var(--mr-bordo); color: white; border: 1px solid #5a0d0f; }
         .btn-export { background-color: var(--mr-bege-escuro); color: white; margin-top: 10px; }
-        .btn-export-pdf { background-color: #2b6cb0; color: white; } /* Botão do PDF */
+        .btn-export-pdf { background-color: #2b6cb0; color: white; } 
         .btn-clear { background-color: transparent; color: #e53e3e; margin-top: 5px; border: 1px solid #e53e3e; }
         
         .backup-row { display: flex; gap: 10px; margin-top: 20px; border-top: 2px dashed var(--border-color); padding-top: 20px; }
@@ -146,6 +146,7 @@
         <div class="webview-arrow">↘️</div>
     </div>
 
+    <!-- TELA INICIAL (Agora com os botões de backup) -->
     <div id="welcome-screen" class="welcome-screen" style="display: none;">
         <div class="welcome-title">Controle de Ponto</div>
         <div class="welcome-text">Selecione a jornada de trabalho da sua empresa para iniciar:</div>
@@ -159,6 +160,13 @@
             <div class="rule-title">⌚ Regra 42 Horas</div>
             <div class="rule-desc">08:24 diárias / 42:00 semanais</div>
         </div>
+
+        <!-- BOTÕES DE BACKUP E RESTAURAÇÃO -->
+        <div class="backup-row">
+            <button type="button" class="btn-backup" onclick="generateBackup()">💾 Gerar Backup</button>
+            <button type="button" class="btn-restore" onclick="triggerRestore()">📂 Restaurar</button>
+            <input type="file" id="restore-input" accept=".json" style="display: none;" onchange="handleRestore(event)">
+        </div>
     </div>
 
     <!-- APLICATIVO PRINCIPAL -->
@@ -167,7 +175,7 @@
             <div class="header-title" id="app-title">Controle de Ponto</div>
             <div class="header-buttons">
                 <button class="btn-header" onclick="toggleTheme()" id="theme-btn">🌙 Modo Escuro</button>
-                <button class="btn-header" onclick="changeRule()">⚙️ Trocar Regra</button>
+                <button class="btn-header" onclick="changeRule()">⚙️ Trocar Regra / Backup</button>
             </div>
         </div>
 
@@ -191,13 +199,7 @@
             <button type="button" class="btn btn-export" onclick="exportarECompartilhar()">📊 Salvar e Baixar Excel</button>
             <button type="button" class="btn btn-export-pdf" onclick="exportarPDF()">📄 Baixar Relatório em PDF</button>
             
-            <button type="button" class="btn btn-clear" onclick="limparSemana()">🗑️ Limpar Todos os Horários (Nova Semana)</button>
-            
-            <div class="backup-row">
-                <button type="button" class="btn-backup" onclick="generateBackup()">💾 Gerar Backup</button>
-                <button type="button" class="btn-restore" onclick="triggerRestore()">📂 Restaurar</button>
-                <input type="file" id="restore-input" accept=".json" style="display: none;" onchange="handleRestore(event)">
-            </div>
+            <button type="button" class="btn btn-clear" onclick="limparSemana()">🗑️ Limpar horários e manter funcionários</button>
         </div>
     </div>
 
@@ -252,6 +254,7 @@
 
         function initApp() {
             activeRule = localStorage.getItem('appPonto_Rule_Clean');
+            data = JSON.parse(localStorage.getItem('appPonto_Data_Clean')) || [];
             
             if (!activeRule) {
                 document.getElementById('welcome-screen').style.display = 'block';
@@ -268,7 +271,6 @@
                     document.getElementById('app-title').innerText = "Controle de Ponto - Regra 42h";
                 }
 
-                data = JSON.parse(localStorage.getItem('appPonto_Data_Clean')) || [];
                 render();
             }
         }
@@ -279,7 +281,7 @@
         }
 
         function changeRule() {
-            askConfirm("Deseja trocar a regra da empresa?\n\nOs trabalhadores e os horários que você já preencheu serão mantidos.", "Trocar Regra", false, () => {
+            askConfirm("Deseja voltar para a tela inicial?\n\nIsso permite que você gere um backup, restaure dados ou troque a regra atual. Os horários já preenchidos não serão apagados.", "Voltar", false, () => {
                 localStorage.removeItem('appPonto_Rule_Clean');
                 initApp();
             });
@@ -304,11 +306,11 @@
         }
 
         function generateBackup() {
-            let backupObj = { regra: activeRule, dados: data };
+            let backupObj = { regra: activeRule || "Não_Definida", dados: data };
             let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupObj));
             let dlAnchorElem = document.createElement('a');
             dlAnchorElem.setAttribute("href", dataStr);
-            dlAnchorElem.setAttribute("download", `Backup_Ponto_${activeRule}.json`);
+            dlAnchorElem.setAttribute("download", `Backup_Ponto.json`);
             document.body.appendChild(dlAnchorElem);
             dlAnchorElem.click();
             dlAnchorElem.remove();
@@ -327,7 +329,7 @@
                     let obj = JSON.parse(e.target.result);
                     if (obj.dados && Array.isArray(obj.dados)) {
                         data = obj.dados;
-                        activeRule = obj.regra || activeRule;
+                        activeRule = obj.regra || activeRule || "40h";
                         
                         localStorage.setItem('appPonto_Rule_Clean', activeRule);
                         saveLocal(false);
